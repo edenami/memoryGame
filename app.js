@@ -1,6 +1,6 @@
 const mongodb = require('mongodb')
 const MongoClient = mongodb.MongoClient
-const _=require('lodash')
+const _ = require('lodash')
 const session = require('express-session')
 
 const connectionURL = 'mongodb+srv://eden:Eden1234@cluster0.f47ue.mongodb.net/myFirstDatabase?retryWrites=true&w=majority'
@@ -28,7 +28,7 @@ const http = require('http');
 const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server);
-var card1=-1, card2=-1
+var card1 = -1, card2 = -1
 
 
 
@@ -37,39 +37,40 @@ app.use(session({
     secret: 'keyboard cat',
     resave: false,
     saveUninitialized: true,
-  }))
+}))
 flag = false
 
-
+/*
 io.on('connection', (socket) => {
     console.log('a user connected');
     socket.on('flipped', (msg) => {
         console.log('flip: ' + msg);
-        if(card1===-1)
-        {
+        if (card1 === -1) {
             card1 = msg
             console.log("c1", card1, card2)
         }
-        else if(card1!=-1&&card2===-1){
+        else if (card1 != -1 && card2 === -1) {
             card2 = msg
             console.log("c2", card2)
         }
-        if(card1==card2)
-            socket.emit('correct',card1)
+        if (card1 == card2)
+            socket.emit('correct', card1)
     });
-  });
+});
+*/
 
-app.get('/help', (req,res)=>{
+app.get('/help', (req, res) => {
     [public, private] = Keys()
     res.send(public)
 })
 
 app.get('/key', (req, res) => {
-    let {publicKey, privateKey} = getOrCreateKeys()
+    let { publicKey, privateKey } = getOrCreateKeys()
     res.send(publicKey)
 })
 
 app.post('/signUp', async (req, res) => {
+    //טיפול בבקשת הרשמה
     const { username, email, password } = req.body;
     const isusernameOrEmailExist = await checkUsernameOrEmailExist(username, email)
     console.log("is" + isusernameOrEmailExist)
@@ -88,6 +89,7 @@ app.post('/signUp', async (req, res) => {
 })
 
 app.post('/login', async (req, res) => {
+    //טיפול בבקשת התחברות
     const { username, password } = req.body
     const isExist = await checkUserExist(username, password)
     if (isExist == true) {
@@ -100,6 +102,7 @@ app.post('/login', async (req, res) => {
 })
 
 app.post('/addGame', async (req, res) => {
+    //טיפול בבקשת יצירת משחק
     const username = req.session.username
     const gameId = await addGame(username)
     res.status(201).send(gameId)
@@ -110,36 +113,67 @@ app.get('/getGames', async (req, res) => {
 })
 
 app.post('/joinGame', async (req, res) => {
+    //טיפול בבקשת הצטרפות למשחק
     const player2 = req.session.username
-    const {_id} = req.body
+    const { _id } = req.body
     console.log(_id, req.session.username)
-    joinGame(_id ,player2)
+    joinGame(_id, player2)
     res.status(201).send('joined')
 })
 
 app.get('/getGame/:id', async (req, res) => {
+    //קבלת נתונים על משחק לפי id
     const db = await getDB();
     res.status(200).send(await getGame(req.params.id))
 })
 
 app.post('/update/:id', async (req, res) => {
+    //עדכון משחק
     const { board, score1, score2, nextPlayer } = req.body
     updateGame(req.params.id, board, score1, score2, nextPlayer)
-   console.log("updated")
+    console.log("updated")
 })
 
+app.get('/getPlayer/:id', async (req, res) => {
+    const db = await getDB();
+    await db.collection("games").findOne({ "_id": ObjectID(req.params.id) }).then((result) => {        
+        res.status(200).send(result)
+    });
+})
 
+app.post('/flipped/:id', async (req, res) => {
+    console.log('hello')
+    const { card, flippedTwice } = req.body
+    const db = await getDB();
+    console.log('finding id')    
+    await db.collection("games").findOne({ "_id": ObjectID(req.params.id) }).then(async (result) => {
+        console.log('found id')
+        let playerTurn = result.nextPlayer;
+
+        console.log('flipped twice', flippedTwice)
+        if (flippedTwice) {
+            // change cyrrent player            
+            playerTurn = (playerTurn === result.player1 ? result.player2 : result.player1);
+        }
+        // update db with new values
+        var myquery = { _id: ObjectID(req.params.id) };
+        var newvalues = { $set: { 'nextPlayer': playerTurn, 'opponentCard': card } };
+        console.log('updating values', newvalues)
+        await db.collection('games').updateOne(myquery, newvalues);
+        return res.status(200);
+    });
+})
 
 server.listen(3000, () => { console.log('sever is up on port 3000') })
 
-async function getGame(_id){
+async function getGame(_id) {
     const db = await getDB();
-    const result = await db.collection("games").findOne({'_id': ObjectID(_id)})
-    console.log("game", result)
+    const result = await db.collection("games").findOne({ '_id': ObjectID(_id) })
     return result
 }
 
 function getOrCreateKeys() {
+    //יצירת מפתחות להצפנת סיסמה
     let privateKey
     let publicKey
     try {
@@ -150,7 +184,7 @@ function getOrCreateKeys() {
         console.error(error)
     }
     if (publicKey && privateKey) {
-        return {publicKey, privateKey}
+        return { publicKey, privateKey }
     }
     else {
         rsa.generateKeyPairAsync().then(keyPair => {
@@ -158,68 +192,73 @@ function getOrCreateKeys() {
             privateKey = keyPair.privateKey
             fs.writeFileSync("public.pem", Buffer.from(publicKey))
             fs.writeFileSync("private.pem", Buffer.from(privateKey))
-            return {publicKey, privateKey}
+            return { publicKey, privateKey }
         })
     }
 }
 
 async function getDB() {
+    //התחברות לבסיס הנתונים
     const client = await MongoClient.connect(connectionURL)
     return client.db(databaseName)
 }
 
 async function addUser(username, password, email) {
+    //הוספת משתמש חדש לטבלת המשתמשים
     const db = await getDB();
     db.collection('users').insertOne({
         username, password, email
     })
 }
 
-async function updateGame(id, board, nextPlayer)
-{
+async function updateGame(id, board, nextPlayer) {
+    //עדכון נתונים של משחק
     console.log("updated")
     const db = await getDB();
     var myquery = { _id: id };
-    var newvalues = { $set: {'board':board ,'score1':score1, 'score2':score2, 'nextPlayer': nextPlayer} };
-  const res = await db.collection('games').updateOne(myquery, newvalues)
+    var newvalues = { $set: { 'board': board, 'score1': score1, 'score2': score2, 'nextPlayer': nextPlayer } };
+    const res = await db.collection('games').updateOne(myquery, newvalues)
     console.log("res", res);
-  }
+}
 
 
 async function addGame(player1) {
+    //הוספת משחק לבסיס הנתונים
     const db = await getDB();
     board = createBoard()
-    const res =await db.collection('games').insertOne({
-        player1, board, score1:0, score2:0, 'nextPlayer':player1
+    const res = await db.collection('games').insertOne({
+        player1, board, score1: 0, score2: 0, 'nextPlayer': player1
     })
     console.log(res.insertedId)
-    return( res.insertedId)
+    return (res.insertedId)
 }
 
-function createBoard(){
-    board =[]
-    board[0]=board[1]='A'
-    board[2]=board[3]='B'
-    board[4]=board[5]='C'
-    board[6]=board[7]='D'
-    board[8]=board[9]='E'
-    board[10]=board[11]='F'
-    board[12]=board[13]='G'
-    board[14]=board[15]='H'
-    board[16]=board[17]='I'
-    board[18]=board[19]='J'
-    board[20]=board[21]='K'
-    board[22]=board[23]='L'
-    board[24]=board[25]='M'
-    board[26]=board[27]='N'
-    board[28]=board[29]='O'
-    board[30]=board[31]='P'
-    board[32]=board[33]='Q'
-    board[34]=board[35]='R'
+function createBoard() {
+    //יצירת לוח משחק של קלפים לפי אותיות
+    board = []
+    board[0] = board[1] = 'A'
+    board[2] = board[3] = 'B'
+    board[4] = board[5] = 'C'
+    board[6] = board[7] = 'D'
+    board[8] = board[9] = 'E'
+    board[10] = board[11] = 'F'
+    board[12] = board[13] = 'G'
+    board[14] = board[15] = 'H'
+    board[16] = board[17] = 'I'
+    board[18] = board[19] = 'J'
+    board[20] = board[21] = 'K'
+    board[22] = board[23] = 'L'
+    board[24] = board[25] = 'M'
+    board[26] = board[27] = 'N'
+    board[28] = board[29] = 'O'
+    board[30] = board[31] = 'P'
+    board[32] = board[33] = 'Q'
+    board[34] = board[35] = 'R'
     return _.shuffle(board)
 }
 
-async function getGames(){
+async function getGames() {
+    //הוצאת המשחקים מבסיס הנתונים
     const db = await getDB();
     const result = await db.collection("games").find({}).toArray();
     return result
@@ -229,11 +268,11 @@ async function checkUserExist(username, password) {
     //בדיקה שהמשתמש קיים בבסיס הנתונים 
     const db = await getDB();
     const result = await db.collection("users").findOne({ 'username': username });
-    const {publicKey, privateKey} = getOrCreateKeys()
+    const { publicKey, privateKey } = getOrCreateKeys()
     if (result != null) {
-            const decrypted = crypt.decrypt(privateKey, result.password);
-            console.log(decrypted, result.password)
-            if (decrypted.message == password)
+        const decrypted = crypt.decrypt(privateKey, result.password);
+        console.log(decrypted, result.password)
+        if (decrypted.message == password)
             return true;
         return false;
     }
@@ -254,17 +293,23 @@ async function checkUsernameOrEmailExist(username, email) {
     return "good";
 }
 
-async function joinGame(_id, player2)
-{
+async function joinGame(_id, player2) {
     const db = await getDB();
-    const result = await db.collection("games").updateOne({ "_id": ObjectID(_id) }, {$set:{player2}})
+    const result = await db.collection("games").updateOne({ "_id": ObjectID(_id) }, { $set: { player2 } })
     return result
 }
 
-async function move(board, score1)
-{
+async function GetPlayer(_id) {
     const db = await getDB();
-    const result = await db.collection("games").updateOne({$set:{board} }, {$set:{score1}})
+    console.log("getting player")
+    const result = await db.collection("games").findOne({ "_id": ObjectID(_id) }).then((res) => console.log("res player2", res));
+    console.log("res player", result)
+    return result
+}
+
+async function move(board, score1) {
+    const db = await getDB();
+    const result = await db.collection("games").updateOne({ $set: { board } }, { $set: { score1 } })
     return result
 }
 
