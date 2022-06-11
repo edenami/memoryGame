@@ -29,32 +29,35 @@ const Game = () => {
   const route = useRoute();
   const player = route.params.player;
   const gameId = route.params.gameId;
-
+  const [, updateState] = useState();
+ const forceUpdate = useCallback(() => updateState({}), []);
+ 
   useEffect(() => {
     const interval = setInterval(async () => {
-        console.log("is clicked", isClicked)
-      if (isPlayerTurn&&!isClicked) return;
-      const result = await axios.get(`http://172.20.10.2:3000/getPlayer/${gameId}`);
+      if (isPlayerTurn) return;
+      const result = await axios.get(`http://10.100.102.10:3000/getPlayer/${gameId}`);
       console.log(result.data);
       const {nextPlayer, opponentCard} = result.data;
       if (opponentCard !== flippedCard) runGameLogic(opponentCard);
       console.log('current player: ', nextPlayer, player);
       if (nextPlayer === player) {
-        setIsPlayerTurn(true);
-        setIsClicked(false)
+        setIsPlayerTurn(true)
+        console.log("is", isPlayerTurn)
       }
     }, 3000);
     return () => clearInterval(interval);
-  }, [isPlayerTurn, isClicked]);
+  }, [isPlayerTurn]);
+
 
   useEffect(() => {
     const playerData = `[${player}/${isPlayerTurn}]`;
+    console.log("is Player Turn", isPlayerTurn)
     setText(
       isPlayerTurn
         ? `${player} turn ${playerData}`
         : `Opponent turn ${playerData}`,
     );
-  }, [isPlayerTurn, isClicked]);
+  }, [isPlayerTurn]);
 
   const runGameLogic = useCallback(
     id => {
@@ -101,7 +104,7 @@ const Game = () => {
         console.log('flipped twice', flippedTwice);
       }
       console.log('calling server with card', id, flippedTwice);
-      await axios.post(`http://172.20.10.2:3000/flipped/${gameId}`, {
+      await axios.post(`http://10.100.102.10:3000/flipped/${gameId}`, {
         card: id,
         flippedTwice,
       });
@@ -109,9 +112,8 @@ const Game = () => {
     [hasPlayerFlipped]
   );
 
-  const onFlip = useCallback(
+  const onFlip = useEffect(
     id => {
-        setIsClicked(true)
       if (!isPlayerTurn) return console.log('not player turn');
       console.log('player turn');
       sendLogicToServer(id);
@@ -134,7 +136,7 @@ const Game = () => {
       // get cards from server
       console.log('calling server');
       await axios
-        .get(`http://172.20.10.2:3000/getGame/${gameId}`)
+        .get(`http://10.100.102.10:3000/getGame/${gameId}`)
         .then(game => {
           game.data.board.forEach((letter, id) => {
             cardsArr.push({
@@ -165,7 +167,7 @@ const Game = () => {
         />
       );
     });
-  }, [gameCards, GameCard, flippedCard, isClicked]);
+  }, [gameCards, GameCard, flippedCard]);
 
   return (
     <ScrollView>
