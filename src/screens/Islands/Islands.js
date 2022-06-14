@@ -2,20 +2,22 @@ import React, {useState, Component} from "react";
 import {View, Text, StyleSheet, ScrollView, webView, Image, TouchableOpacity, ImageBackground} from 'react-native';
 import CustomInput from "../../components/CustomInput";
 import CustomButton from "../../components/CustomButton"; 
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { useForm, Controller } from "react-hook-form";
 
 
 const Islands = () => {
     const navigation = useNavigation();
     const back = require("Autho/assets/Vector.png")
+    const route = useRoute()
+    const player = route.params.player
 
     return(
         <ScrollView>
       
            <View >
        <ImageBackground source={require("Autho/assets/back.png")} style={{ flex: 1,resizeMode: 'cover'}}>
-        <TouchableOpacity style={styles.button} onPress={()=>{navigation.navigate("Home")}}>
+        <TouchableOpacity style={styles.button} onPress={()=>{navigation.navigate("Home", {player: player})}}>
           <Image source={require("Autho/assets/calm.png")}/>
         </TouchableOpacity>
         <Image style={{top: 10,bottom: 0,left: 70,right: 0,}} source={require("Autho/assets/vector2.png")}/>

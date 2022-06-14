@@ -29,11 +29,11 @@ const SignUpScreen = () => {
             setMessage("password must be at least 8 charcters and contain uppercase char")
         else if(data.password == data.passwordRepeat)
         {
-            let result2 = await axios.get('http://10.100.102.12:3000/key');
+            let result2 = await axios.get('http://172.20.10.2:3000/key');
             var publicKey = result2.data
             console.log("pub: "+publicKey)
             var encryptedPass = crypt.encrypt(publicKey, data.password);
-            let result = await axios.post('http://10.100.102.12:3000/signUp',{
+            let result = await axios.post('http://172.20.10.2:3000/signUp',{
                 username: data.username,
                 password: encryptedPass,
                 email: data.email
@@ -45,7 +45,7 @@ const SignUpScreen = () => {
             else
             {
                 setMessage('')
-                navigation.navigate("ConfirmEmail")
+                navigation.navigate("islands",{player:data.username})
             }
         }
         else{
@@ -54,6 +54,7 @@ const SignUpScreen = () => {
     };
 
     function isupper(str) {
+        //בדיקה שקיימת אות גודלה
         for (var i = 0; i < str.length; i++) {
             if(/[A-Z]/.test(str.charAt(i)))
             return true;
@@ -62,6 +63,7 @@ const SignUpScreen = () => {
     }
     function islower(str)
     {
+        //בדיקה שקיימת אות קטנה
         for (var i = 0; i < str.length; i++) {
             if(/[a-z]/.test(str.charAt(i)))
             return true;
@@ -69,6 +71,7 @@ const SignUpScreen = () => {
         return false;
     }
     function validateEmail(email) {
+        //בדיקה שהאימייל תקין
         return email.match(
           /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
         );

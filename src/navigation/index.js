@@ -12,6 +12,7 @@ import WaitingForPlayers from "../screens/WaitingForPlayers/WaitingForPlayers.js
 import Game from "../screens/Game/Game.js"
 import Islands from "../screens/Islands/Islands.js"
 
+//קובץ האחראי על המעבר בין מסכי האפליקציה
 const Stack = createNativeStackNavigator();
 
 const Navigation = () => {

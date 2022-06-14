@@ -43,7 +43,7 @@ const ChickenCard =  ({id=-1,enableFlip, onFlip, openCard, letter}) => {
   const onEnd=()=>{
     setExecuted(false)
     console.log("hi")
-    socket = io("http://10.100.102.12:3000");
+    socket = io("http://172.20.10.2:3000");
     socket.emit('flipped', id)
     socket.on('correct', ()=>{
       setExecuted(true)

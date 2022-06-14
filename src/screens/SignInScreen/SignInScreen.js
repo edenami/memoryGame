@@ -22,14 +22,17 @@ const SignInScreen = () => {
     //NetworkInfo.getIPV4Address().then(ipv4Address => {  console.log(ipv4Address); });
 
     const onSignInPressed = async data =>  {
+        //בעת לחיצה על כפתור התחברות נשלחת בקשת פוסט לשרת עם הנתונים שהוכנסו
+        //אם חוזרת מהשרת תשובה חיובית המשתמש מועבר למסך הבא אחרת מוצגת הודעה שהפרטים שגויים
         if (data.username && data.password) {
-            let result = await axios.post('http://10.100.102.12:3000/login', {
+            let result = await axios.post('http://172.20.10.2:3000/login', {
                 username: data.username,
                 password: data.password
             });
             
             if(result.data == 'ok'){
-               navigation.navigate('islands')
+               navigation.navigate('islands', 
+               {player: data.username})
             }
             else{
                  setMessage('Invalid Credentials')
@@ -85,6 +88,7 @@ const SignInScreen = () => {
     };
 
     const onSignUpPressed = () => {
+        //מעבר לעמוד הרשמה בעת לחיצה על כפתור הרשמה
         console.warn("on sign up pressed");
         navigation.navigate("SignUp");
     }
